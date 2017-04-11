@@ -11,7 +11,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
-from nlviewwidget import NlViewWidget
+from nl3d.gui.nlviewwidget import NlViewWidget
 
 
 class NlViewMgr(QObject) :

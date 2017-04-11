@@ -194,3 +194,17 @@ class NlProblem :
             return _via_dict[label]
         else :
             return None
+
+    # @brief 内容を書き出す．
+    #
+    # 主にデバッグ用
+    def dump(self) :
+        print('width  = {}'.format(self.width))
+        print('height = {}'.format(self.height))
+        print('depth  = {}'.format(self.depth))
+
+        for net_id, label, start_point, end_point in self.net_list() :
+            print('[{:2d}] Net#{}: ({}, {}, {}) - ({}, {}, {})'.format(net_id, label, start_point.x, start_point.y, start_point.z, end_point.x, end_point.y, end_point.z))
+
+        for via_id, via in self.via_list() :
+            print('[{:2d}] Via#{}: {}, {}, {} - {}'.format(via_id, via.label, via.x, via.y, via.z1, via.z2))

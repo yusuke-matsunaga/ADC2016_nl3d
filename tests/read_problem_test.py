@@ -9,8 +9,7 @@
 
 
 import sys
-from nl3d.nlproblem import NlProblem
-from nl3d.adc2016_reader import ADC2016_Reader
+import nl3d
 
 
 if __name__ == '__main__' :
@@ -19,7 +18,7 @@ if __name__ == '__main__' :
         print('USAGE: read_problem_test <filename>')
         exit(0)
 
-    reader = ADC2016_Reader()
+    reader = nl3d.ADC2016_Reader()
 
     filename = sys.argv[1]
     with open(filename, 'rt') as fin :
@@ -28,12 +27,4 @@ if __name__ == '__main__' :
             print('{}: read failed.'.format(filename))
             exit(-1)
 
-        print('width  = {}'.format(problem.width))
-        print('height = {}'.format(problem.height))
-        print('depth  = {}'.format(problem.depth))
-
-        for net_id, label, start_point, end_point in problem.net_list() :
-            print('[{:2d}] Net#{}: ({}, {}, {}) - ({}, {}, {})'.format(net_id, label, start_point.x, start_point.y, start_point.z, end_point.x, end_point.y, end_point.z))
-
-        for via_id, via in problem.via_list() :
-            print('[{:2d}] Via#{}: {}, {}, {} - {}'.format(via_id, via.label, via.x, via.y, via.z1, via.z2))
+        problem.dump()

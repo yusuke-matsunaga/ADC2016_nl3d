@@ -1,26 +1,24 @@
 #! /usr/bin/env python3
 #
-# @file read_problem_test.py
-# @brief
+# @file nlview_test.py
+# @brief NlViewMgr のテストプログラム
 # @author Yusuke Matsunaga (松永 裕介)
 #
-# Copyright (C) 2016 Yusuke Matsunaga
+# Copyright (C) 2017 Yusuke Matsunaga
 # All rights reserved.
 
 import sys
-from nlproblem import NlProblem
-from nlviewmgr import NlViewMgr
-from nlviewwidget import NlViewWidget
-from ADC2016_Reader import ADC2016_Reader
+import nl3d
+import nl3d.gui
 from PyQt5.QtWidgets import *
 
 if __name__ == '__main__' :
 
     if len(sys.argv) != 2 :
-        print('USAGE: read_problem_test <filename>')
+        print('USAGE: nlview_test <filename>')
         exit(0)
 
-    reader = ADC2016_Reader()
+    reader = nl3d.ADC2016_Reader()
 
     filename = sys.argv[1]
     with open(filename, 'rt') as fin :
@@ -41,7 +39,7 @@ if __name__ == '__main__' :
 
         app = QApplication(sys.argv)
 
-        vm = NlViewMgr()
+        vm = nl3d.gui.NlViewMgr()
         vm.set_problem(problem)
 
         app.exec_()
