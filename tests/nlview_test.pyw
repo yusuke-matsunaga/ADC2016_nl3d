@@ -27,16 +27,6 @@ if __name__ == '__main__' :
             print('{}: read failed.'.format(filename))
             exit(-1)
 
-        print('width  = {}'.format(problem.width))
-        print('height = {}'.format(problem.height))
-        print('depth  = {}'.format(problem.depth))
-
-        for net_id, label, start_point, end_point in problem.net_list() :
-            print('Net#{}[{}]: ({}, {}, {}) - ({}, {}, {})'.format(label, net_id, start_point.x, start_point.y, start_point.z, end_point.x, end_point.y, end_point.z))
-
-        for via_id, via in problem.via_list() :
-            print('Via#{}[{}]: {}, {}, {} - {}'.format(via.label, via_id, via.x, via.y, via.z1, via.z2))
-
         app = QApplication(sys.argv)
 
         vm = nl3d.gui.NlViewMgr()

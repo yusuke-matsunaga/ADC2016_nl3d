@@ -43,11 +43,11 @@ class NlViewMgr(QObject) :
             self.mViewList.append(vw)
             vw.show()
 
-        for net_id, label, s, e in problem.net_list() :
+        for net_id, (label, s, e) in enumerate(problem.net_list()) :
             self._set_terminal(s, net_id)
             self._set_terminal(e, net_id)
 
-        for via_id, via in problem.via_list() :
+        for via_id, via in enumerate(problem.via_list()) :
             self._set_via(via, via_id)
 
 

@@ -148,13 +148,22 @@ class NlProblem :
     def depth(self) :
         return self._depth
 
+    # @brief 線分数を返す．
+    @property
+    def net_num(self) :
+        return len(self._net_list)
+
+    # @brief ビア数を返す．
+    @property
+    def via_num(self) :
+        return len(self._via_list)
 
     # @brief 線分を返す．
     #
     # これは for 文で使われることを想定している．
     def net_list(self) :
-        for net_id, (label, start_point, end_point) in enumerate(self._net_list) :
-            yield net_id, label, start_point, end_point
+        for label, start_point, end_point in self._net_list :
+            yield label, start_point, end_point
 
 
     # @brief label というラベルを持つネットがあるか調べる．
@@ -177,8 +186,8 @@ class NlProblem :
     #
     # これは for 文で使われることを想定している．
     def via_list(self) :
-        for via_id, via in enumerate(self._via_list) :
-            yield via_id, via
+        for via in self._via_list :
+            yield via
 
 
     # @brief label というラベルを持つビアがあるか調べる．
@@ -203,8 +212,8 @@ class NlProblem :
         print('height = {}'.format(self.height))
         print('depth  = {}'.format(self.depth))
 
-        for net_id, label, start_point, end_point in self.net_list() :
+        for net_id, (label, start_point, end_point) in enumerate(self.net_list()) :
             print('[{:2d}] Net#{}: ({}, {}, {}) - ({}, {}, {})'.format(net_id, label, start_point.x, start_point.y, start_point.z, end_point.x, end_point.y, end_point.z))
 
-        for via_id, via in self.via_list() :
+        for via_id, via in enumerate(self.via_list()) :
             print('[{:2d}] Via#{}: {}, {}, {} - {}'.format(via_id, via.label, via.x, via.y, via.z1, via.z2))
