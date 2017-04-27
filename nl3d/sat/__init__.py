@@ -8,4 +8,4 @@
 # All rights reserved.
 
 from nl3d.sat.satsolver import SatSolver
-from nl3d.sat.satsolver import SatBool3
+from nl3d.sat.satbool3 import SatBool3
