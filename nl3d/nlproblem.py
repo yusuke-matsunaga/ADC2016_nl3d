@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
-#
-# @file nlproblem.py
+
+## @file nlproblem.py
 # @brief NlProblem の定義ファイル
 # @author Yusuke Matsunaga (松永 裕介)
 #
@@ -10,7 +10,7 @@
 from nl3d.nlpoint import NlPoint
 from nl3d.nlvia import NlVia
 
-# @brief 問題を表すクラス
+## @brief 問題を表すクラス
 #
 # 内部で保持している情報は以下の通り
 # - 幅
@@ -63,12 +63,12 @@ from nl3d.nlvia import NlVia
 # という風に使う．
 class NlProblem :
 
-    # @brief 初期化
+    ## @brief 初期化
     def __init__(self) :
         self.clear()
 
 
-    # @brief クリアする．
+    ## @brief クリアする．
     def clear(self) :
         self._width = 0
         self._height = 0
@@ -79,7 +79,7 @@ class NlProblem :
         self._via_dict = {}
 
 
-    # @brief サイズを設定する．
+    ## @brief サイズを設定する．
     # @param[in] width 幅
     # @param[in] height 高さ
     # @param[in] depth 層数
@@ -91,7 +91,7 @@ class NlProblem :
         self._depth = depth
 
 
-    # @brief 線分を追加する．
+    ## @brief 線分を追加する．
     # @param[in] label ラベル
     # @param[in] start_point 始点の座標
     # @param[in] end_point 終点の座標
@@ -109,7 +109,7 @@ class NlProblem :
         self._net_dict[label] = (start_point, end_point)
 
 
-    # @brief ビアを追加する．
+    ## @brief ビアを追加する．
     # @param[in] label ラベル
     # @param[in] x X座標
     # @param[in] y Y座標
@@ -131,34 +131,34 @@ class NlProblem :
         self._via_dict[label] = via
 
 
-    # @brief 幅を返す．
+    ## @brief 幅を返す．
     @property
     def width(self) :
         return self._width
 
 
-    # @brief 高さを返す．
+    ## @brief 高さを返す．
     @property
     def height(self) :
         return self._height
 
 
-    # @brief 層数を返す．
+    ## @brief 層数を返す．
     @property
     def depth(self) :
         return self._depth
 
-    # @brief 線分数を返す．
+    ## @brief 線分数を返す．
     @property
     def net_num(self) :
         return len(self._net_list)
 
-    # @brief ビア数を返す．
+    ## @brief ビア数を返す．
     @property
     def via_num(self) :
         return len(self._via_list)
 
-    # @brief 線分を返す．
+    ## @brief 線分を返す．
     #
     # これは for 文で使われることを想定している．
     def net_list(self) :
@@ -166,12 +166,12 @@ class NlProblem :
             yield label, start_point, end_point
 
 
-    # @brief label というラベルを持つネットがあるか調べる．
+    ## @brief label というラベルを持つネットがあるか調べる．
     def has_net(self, label) :
         return label in self._net_dict
 
 
-    # @brief label というラベルを持つネットを返す．
+    ## @brief label というラベルを持つネットを返す．
     # @return (start, end) というタプルを返す．
     #
     # なければ None を返す．
@@ -182,7 +182,7 @@ class NlProblem :
             return None
 
 
-    # @brief ビアを返す．
+    ## @brief ビアを返す．
     #
     # これは for 文で使われることを想定している．
     def via_list(self) :
@@ -190,12 +190,12 @@ class NlProblem :
             yield via
 
 
-    # @brief label というラベルを持つビアがあるか調べる．
+    ## @brief label というラベルを持つビアがあるか調べる．
     def has_via(self, label) :
         return label in self._via_dict
 
 
-    # @brief label というラベルを持つビアを返す．
+    ## @brief label というラベルを持つビアを返す．
     #
     # なければ None を返す．
     def via(self, label) :
@@ -204,7 +204,7 @@ class NlProblem :
         else :
             return None
 
-    # @brief 内容を書き出す．
+    ## @brief 内容を書き出す．
     #
     # 主にデバッグ用
     def dump(self) :

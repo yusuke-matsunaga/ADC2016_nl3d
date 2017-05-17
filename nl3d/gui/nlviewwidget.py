@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
-#
-# @file nlviewwidget.py
+
+## @file nlviewwidget.py
 # @brief NlViewWidget の定義ファイル
 # @author Yusuke Matsunaga (松永 裕介)
 #
@@ -12,14 +12,14 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 
-# @brief 色と太さを設定したペンを作成する．
+## @brief 色と太さを設定したペンを作成する．
 def _new_pen(color, width) :
     pen = QPen(color)
     pen.setWidth(width)
     return pen
 
 
-# @brief ナンバーリンクの１つの層を表すウィジェット
+## @brief ナンバーリンクの１つの層を表すウィジェット
 class NlViewWidget(QWidget) :
 
     # カスタムシグナルの生成
@@ -29,7 +29,7 @@ class NlViewWidget(QWidget) :
     leave   = pyqtSignal(int, int, QMouseEvent)
 
 
-    # @brief 初期化
+    ## @brief 初期化
     def __init__(self, parent = None) :
 
         super(NlViewWidget, self).__init__(parent)
@@ -113,7 +113,7 @@ class NlViewWidget(QWidget) :
         self.set_size(self._Width, self._Height)
 
 
-    # @brief クリアする．
+    ## @brief クリアする．
     def clear(self) :
         for x in range(0, self._Width) :
             for y in range(0, self._Height) :
@@ -124,7 +124,7 @@ class NlViewWidget(QWidget) :
         self._Modified = False
 
 
-    # @brief 盤面のサイズを設定する．
+    ## @brief 盤面のサイズを設定する．
     # @param[in] width 幅
     # @param[in] height 高さ
     #
@@ -143,7 +143,7 @@ class NlViewWidget(QWidget) :
         self._StateArray = [0 for i in range(0, n)]
 
 
-    # @brief 指定されたマスが端子の時に True を返す．
+    ## @brief 指定されたマスが端子の時に True を返す．
     # @param[in] x, y 座標
     def is_terminal(self, x, y) :
         index = self.xy_to_index(x, y)
@@ -153,7 +153,7 @@ class NlViewWidget(QWidget) :
             return False
 
 
-    # @brief 指定されたマスがビアの時に True を返す．
+    ## @brief 指定されたマスがビアの時に True を返す．
     # @param[in] x, y 座標
     def is_via(self, x, y) :
         index = self.xy_to_index(x, y)
@@ -163,14 +163,14 @@ class NlViewWidget(QWidget) :
             return False
 
 
-    # @brief 指定されたマスの線分番号を返す．
+    ## @brief 指定されたマスの線分番号を返す．
     # @param[in] x, y 座標
     def grid_val(self, x, y) :
         index = self.xy_to_index(x, y)
         return self._ValArray[index]
 
 
-    # @brief 指定されたマスのビア番号を返す．
+    ## @brief 指定されたマスのビア番号を返す．
     # @param[in] x, y 座標
     #
     # 指定されたマスがビアでないときの値は不定
@@ -181,22 +181,22 @@ class NlViewWidget(QWidget) :
         return self._LabelArray[via_id]
 
 
-    # @brief 変更フラグをクリアする．
+    ## @brief 変更フラグをクリアする．
     def clear_modified(self) :
         self._Modified = False
 
 
-    # @brief 変更フラグを得る．
+    ## @brief 変更フラグを得る．
     def is_modified(self) :
         return self._Modified
 
 
-    # @brief サイズヒントを返す．
+    ## @brief サイズヒントを返す．
     def sizeHint(self) :
         return QSize(self._BanWidth, self._BanHeight)
 
 
-    # @brief 終端の設定をする．
+    ## @brief 終端の設定をする．
     # @param[in] x, y 座標
     # @param[in] val 線分番号
     def set_terminal(self, x, y, val) :
@@ -207,7 +207,7 @@ class NlViewWidget(QWidget) :
         self.set_val(x, y, val)
 
 
-    # @brief ビアの設定をする．
+    ## @brief ビアの設定をする．
     # @param[in] via_id ビア番号
     # @param[in] x, y 座標
     # @param[in] label ラベル
@@ -220,7 +220,7 @@ class NlViewWidget(QWidget) :
         self._LabelArray[via_id] = label
 
 
-    # @brief 線分番号を設定する．
+    ## @brief 線分番号を設定する．
     # @param[in] x, y 座標
     # @param[in] val 線分番号
     def set_val(self, x, y, val) :
@@ -233,7 +233,7 @@ class NlViewWidget(QWidget) :
         self.update()
 
 
-    # @brief L字制約の表示モードを制御する．
+    ## @brief L字制約の表示モードを制御する．
     # @param[in] mode モード
     def set_lshape_mode(self, mode) :
         self._LshapeMode = mode
@@ -241,7 +241,7 @@ class NlViewWidget(QWidget) :
         self.update()
 
 
-    # @brief paint イベント
+    ## @brief paint イベント
     # @param[in] event イベント構造体
     def paintEvent(self, event) :
 
@@ -395,7 +395,7 @@ class NlViewWidget(QWidget) :
         painter.restore()
 
 
-    # @brief Button Press イベント
+    ## @brief Button Press イベント
     # @param[in] event イベント構造体
     def mousePressEvent(self, event) :
         ret, x, y = self.get_xy(event)
@@ -403,7 +403,7 @@ class NlViewWidget(QWidget) :
             self.clicked.emit(x, y, event)
 
 
-    # @brief Button Release イベント
+    ## @brief Button Release イベント
     # @param[in] event イベント構造体
     def mouseRelaseEvent(self, event) :
         ret, x, y = self.get_xy(event)
@@ -411,7 +411,7 @@ class NlViewWidget(QWidget) :
             self.released.emit(x, y, event)
 
 
-    # @brief Motion notify イベント
+    ## @brief Motion notify イベント
     # @param[in] event イベント構造体
     def mouseMoveEvent(self, event) :
         ret, x, y = self.get_xy(event)
@@ -429,7 +429,7 @@ class NlViewWidget(QWidget) :
                 self._CurY = -1
 
 
-    # @brief マウスの座標から格子座標を得る．
+    ## @brief マウスの座標から格子座標を得る．
     # @param[in] event イベント構造体
     # @retval (x, y) 格子座標
     # @retval None 格子内に入っていなかった時
@@ -457,7 +457,7 @@ class NlViewWidget(QWidget) :
         return True, x, y
 
 
-    # @brief 格子座標からローカル座標を得る．
+    ## @brief 格子座標からローカル座標を得る．
     # @param[in] x, y 格子座標
     # @return ローカル座標
     def xy_to_local(self, x, y) :
@@ -466,7 +466,7 @@ class NlViewWidget(QWidget) :
         return lx, ly
 
 
-    # @brief 格子座標からインデックスを得る．
+    ## @brief 格子座標からインデックスを得る．
     # @param[in] x, y 格子座標
     # @return インデックス
     def xy_to_index(self, x, y) :
@@ -475,7 +475,7 @@ class NlViewWidget(QWidget) :
         return x * self._Height + y
 
 
-    # @brief インデックスから格子座標を得る．
+    ## @brief インデックスから格子座標を得る．
     # @param[in] index インデックス
     # @return 格子座標
     def index_to_xy(self, index) :

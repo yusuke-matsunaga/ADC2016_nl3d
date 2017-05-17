@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
-#
-# @file nlsolver.py
+
+## @file nlsolver.py
 # @brief NlSolver の定義ファイル
 # @author Yusuke Matsunaga (松永 裕介)
 #
@@ -12,10 +12,10 @@ from nlvia import NlVia
 from nlproblem import NlProblem
 
 
-# @brief 節点を表すクラス
+## @brief 節点を表すクラス
 class NlNode :
 
-    # @brief 初期化
+    ## @brief 初期化
     def __init__(self, x, y, z) :
         self._x = x
         self._y = x
@@ -28,24 +28,24 @@ class NlNode :
         self._via_id = None
 
 
-# @brief 枝を表すクラス
+## @brief 枝を表すクラス
 class NlEdge :
 
-    # @brief 初期化
+    ## @brief 初期化
     def __init__(self, node1, node2, var) :
         self._node1 = node1
         self._node2 = node2
         self._var = var
 
 
-# @brief ナンバーリンクソルバーを表すクラス
+## @brief ナンバーリンクソルバーを表すクラス
 class NlSolver :
 
-    # @brief 初期化
+    ## @brief 初期化
     def __init__(self) :
         pass
 
-    # @brief 問題を表すCNF式を生成する．
+    ## @brief 問題を表すCNF式を生成する．
     # @param[in] problem 問題を表すオブジェクト(NlProblem)
     # @param[in] solver SATソルバ
     def make_cnf(self, problem, solver) :
@@ -126,7 +126,7 @@ class NlSolver :
                         self.make_zero_or_two(var_list, solver)
 
 
-    # @brief 枝を作る．
+    ## @brief 枝を作る．
     # @param[in] node1, node2 両端の節点
     # @param[in] solver SATソルバ
     def new_edge(self, node1, node2, solver) :
@@ -136,7 +136,7 @@ class NlSolver :
         node2._edge_list.append(edge)
 
 
-    # @brief 節点に終端の印をつける．
+    ## @brief 節点に終端の印をつける．
     def set_terminal(self, node, net_id, solver) :
         node._is_terminal = True
         # ラベルを固定する．
@@ -146,7 +146,7 @@ class NlSolver :
             else :
                 solver.add_clause(-var)
 
-    # @brief 節点にビアの印をつける．
+    ## @brief 節点にビアの印をつける．
     def set_via(self, node, via_id, solver) :
         node._is_via = True
         node._via_id = via_id

@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
-#
-# @file satsolver.py
+
+## @file satsolver.py
 # @brief SAT ソルバ用のインターフェイスクラス
 # @author Yusuke Matsunaga (松永 裕介)
 #
@@ -16,9 +16,14 @@ import subprocess
 from nl3d.sat.satbool3 import SatBool3
 
 
+## @brief SAT ソルバを表すクラス
+#
+# このクラスは内部でSATソルバのプログラムを呼び出している．
+# 同じインターフェイスで内部で SAT を解くクラスを(主にC++で)
+# 実装しても良い．
 class SatSolver :
 
-    # @brief 初期化
+    ## @brief 初期化
     # @param[in] satprog SATソルバのプログラム名
     def __init__(self, satprog) :
         self._var_count = 0
@@ -28,7 +33,7 @@ class SatSolver :
         self._debug = False
 
 
-    # @brief 変数を作る．
+    ## @brief 変数を作る．
     # @return 変数番号を返す．
     #
     # 変数番号は 1 から始まる．
@@ -37,7 +42,7 @@ class SatSolver :
         return self._var_count
 
 
-    # @brief 節を追加する．
+    ## @brief 節を追加する．
     # @param[in] lit_list 節のリテラルのリスト
     #
     # リテラルは 0 以外の整数で，絶対値が番号を
@@ -59,7 +64,7 @@ class SatSolver :
         self._clause_list.append(lit_list)
 
 
-    # @brief SAT問題を解く．
+    ## @brief SAT問題を解く．
     # @param[in] assumption_list 仮定する割り当てリスト
     # @return (result, model) を返す．
     #

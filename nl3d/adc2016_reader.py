@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
-#
-# @file adc2016_reader.py
+
+## @file adc2016_reader.py
 # @brief ADC2016 フォーマットのファイルを読んで NlProblem に設定するプログラム
 # @author Yusuke Matsunaga (松永 裕介)
 #
@@ -11,7 +11,7 @@ import re
 from nl3d.nlproblem import NlProblem
 from nl3d.nlpoint import NlPoint
 
-# @brief 3D版(ADC2016)のファイルを読み込むためのパーサークラス
+## @brief 3D版(ADC2016)のファイルを読み込むためのパーサークラス
 #
 # @code
 # reader = ADC2016_Reader()
@@ -25,7 +25,7 @@ from nl3d.nlpoint import NlPoint
 # という風に用いる．
 class ADC2016_Reader :
 
-    # @brief 初期化
+    ## @brief 初期化
     def __init__(self) :
         # 正規表現のパタンを作る．
         # nlcheck.py のパクリ
@@ -37,7 +37,7 @@ class ADC2016_Reader :
         self.pVIA3D_pos  = re.compile('[- ]\((\d+),(\d+),(\d+)\)', re.IGNORECASE)
 
 
-    # @brief ファイルを読み込む．
+    ## @brief ファイルを読み込む．
     # @param[in] fin ファイルオブジェクト
     # @return NlProblem を返す．
     #
@@ -109,7 +109,7 @@ class ADC2016_Reader :
             return None
 
 
-    # @brief SIZE行の処理を行う．
+    ## @brief SIZE行の処理を行う．
     # @retval True SIZE行だった．
     # @retval False SIZE行ではなかった．
     #
@@ -140,7 +140,7 @@ class ADC2016_Reader :
         return True
 
 
-    # LINE_NUM行の処理を行う．
+    ## LINE_NUM行の処理を行う．
     # @retval True LINE_NUM行だった．
     # @retval False LINE_NUM行ではなかった．
     #
@@ -165,7 +165,7 @@ class ADC2016_Reader :
         return True
 
 
-    # LINE 行の処理を行う．
+    ## LINE 行の処理を行う．
     # @retval True LINE行だった．
     # @retval False LINE行ではなかった．
     #
@@ -235,7 +235,7 @@ class ADC2016_Reader :
         return True
 
 
-    # @brief VIA行を読み込む．
+    ## @brief VIA行を読み込む．
     # @retval True VIA行だった．
     # @retval False VIA行ではなかった．
     #
@@ -306,7 +306,7 @@ class ADC2016_Reader :
         return True
 
 
-    # (x, y, z) が範囲内にあるか調べる
+    ## (x, y, z) が範囲内にあるか調べる
     # @param[in] x, y, z 座標
     # @retval True 範囲内だった．
     # @retval False 範囲外だった．
@@ -326,7 +326,7 @@ class ADC2016_Reader :
         return True
 
 
-    # エラー処理
+    ## エラー処理
     # @param[in] msg エラーメッセージ
     #
     # nerr の値が加算される．

@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
-#
-# @file nlviewmgr.py
+
+## @file nlviewmgr.py
 # @brief
 # @author Yusuke Matsunaga (松永 裕介)
 #
@@ -16,7 +16,7 @@ from nl3d.gui.nlviewwidget import NlViewWidget
 
 class NlViewMgr(QObject) :
 
-    # @brief 初期化を行う．
+    ## @brief 初期化を行う．
     def __init__(self, parent = None) :
 
         super(NlViewMgr, self).__init__(parent)
@@ -24,12 +24,12 @@ class NlViewMgr(QObject) :
         self.clear()
 
 
-    # @brief クリアする．
+    ## @brief クリアする．
     def clear(self) :
         self.mViewList = []
 
 
-    # @brief 問題を設定する．
+    ## @brief 問題を設定する．
     def set_problem(self, problem) :
         self.clear()
 
@@ -51,12 +51,12 @@ class NlViewMgr(QObject) :
             self._set_via(via, via_id)
 
 
-    # @brief 問題と解を設定する．
+    ## @brief 問題と解を設定する．
     def set_solution(self, problem, solution) :
         pass
 
 
-    # @brief 終端の設定を行う．
+    ## @brief 終端の設定を行う．
     def _set_terminal(self, point, label) :
         x = point.x
         y = point.y
@@ -65,7 +65,7 @@ class NlViewMgr(QObject) :
         vw.set_terminal(x, y, label)
 
 
-    # @brief ビアの設定を行う．
+    ## @brief ビアの設定を行う．
     def _set_via(self, via, via_id) :
         label = via.label
         x = via.x
