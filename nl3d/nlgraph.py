@@ -167,17 +167,20 @@ class NlGraph :
                     self._new_edge(node1, node2)
 
         # 端子の印をつける．
+        self._terminal_node_pair_list = []
         for net_id, (label, s, e) in problem.net_list() :
             node1 = node_array[s.x][s.y][s.z]
             node2 = node_array[e.x][e.y][e.z]
             node1.set_terminal(net_id)
             node2.set_terminal(net_id)
+            self._terminal_node_pair_list.append((node1, node2))
 
         # ビアの印をつける．
         for via_id, via in problem.via_list() :
             for z in range(via.z1, via.z2 - via.z1 + 1) :
                 node = node_array[via.x][via.y][z]
                 node.set_via(via_id)
+
 
     ## @brief ネット数
     @property
@@ -191,16 +194,22 @@ class NlGraph :
         return self._via_num
 
 
-    ## @brief ノードのリストを返す．
+    ## @brief ノードのリスト
     @property
     def node_list(self) :
         return self._node_list
 
 
-    ## @brief 枝のリストを返す．
+    ## @brief 枝のリスト
     @property
     def edge_list(self) :
         return self._edge_list
+
+
+    ## @brief 端点のノード対を返す．
+    # @param[in] net_id 線分番号
+    def terminal_node_pair(self, net_id) :
+        return self._terminal_node_pair[net_id]
 
 
     ## @brief 枝を作る．
