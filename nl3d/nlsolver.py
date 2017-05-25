@@ -19,12 +19,15 @@ def solve_nlink(graph, solver) :
     vn = graph.via_num
 
     # 枝に対応する変数を作る．
-    # 結果は edge_var_dict に edge をキーとして格納する．
-    edge_var_dict = [edge:solver.new_variable() for edge in graph.edge_list]
+    # 結果は edge_var_list に格納する．
+    # edge_var_list[edge.id] に edge に対応する変数が入る．
+    edge_var_list = [solver.new_variable() for edge in graph.edge_list]
 
     # 節点のラベルを表す変数のリストを作る．
-    # 結果は node_vars_dict に node をキーとして格納する．
-    node_vars_dict = [node:[solver.new_variable() for in in range(0, nn)] \
+    # 節点のラベルは nn 個の変数で表す(one-hotエンコーディング)
+    # 結果は node_vars_list に格納する．
+    # node_vars_list[node.id] に node に対応する変数のリストが入る．
+    node_vars_list = [[solver.new_variable() for in in range(0, nn)] \
                       for node in graph.node_list]
 
     # ビアと線分の割り当てを表す変数を作る．
@@ -41,10 +44,10 @@ def solve_nlink(graph, solver) :
     #   全て選ばれないか2つの枝が選ばれる．
     for node in graph.node_list :
         # node に接続している枝の変数のリスト
-        evar_list = [edge_var_dict[edge] for edge in node.edge_list]
+        evar_list = [edge_var_list[edge.id] for edge in node.edge_list]
 
         # node のラベルを表す変数のリスト
-        lvar_list = node_vars_dict[node]
+        lvar_list = node_vars_list[node.id]
 
         if node.is_terminal :
             # node が終端の場合
@@ -78,14 +81,13 @@ def solve_nlink(graph, solver) :
 
     # 枝が選択された時にその両端のノードのラベルが等しくなるという制約を作る．
     for edge in graph.edge_list :
-        evar = edge_var_dict[edge]
-        nvar_list1 = node_vars_dict[edge.node1]
-        nvar_list2 = node_vars_dict[edge.node2]
+        evar = edge_var_list[edge.id]
+        nvar_list1 = node_vars_list[edge.node1.id]
+        nvar_list2 = node_vars_list[edge.node2.id]
         for i in range(0, nn) :
             nvar1 = nvar_list1[i]
             nvar2 = nvar_list2[i]
-            solver.add_clause(-evar, -nvar1,  nvar2)
-            solver.add_clause(-evar,  nvar1, -nvar2)
+            _make_conditional_equal(evar, nvar1, nvar2)
 
     # SAT問題を解く．
     result, model = solver.solve()
@@ -93,6 +95,10 @@ def solve_nlink(graph, solver) :
     if result == SatBool3.B3True :
         # 解けた．
         print("OK")
+
+        # SATモデルから解を作る．
+        _model_to_solution(graph, model)
+
     elif result == SatBool3.B3False :
         # 解けなかった．
         print("NG")
@@ -205,3 +211,9 @@ def _make_zero_or_two(solver, var_list) :
         solver.add_clause(-var0,  var1,  var2,  var3)
     else :
         assert False
+
+
+## @brief 条件付きで２つの変数が等しくなるという制約を作る．
+def _make_conditional_equal(solver, cvar, var1, var2) :
+    solver.add_clause(-cvar, -var1,  var2)
+    solver.add_clause(-cvar,  var1, -var2)

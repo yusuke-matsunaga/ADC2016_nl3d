@@ -15,9 +15,9 @@ from nlproblem import NlProblem
 ## @brief 節点を表すクラス
 #
 # 以下のメンバを持つ．
+# - ID番号
 # - 座標(_x, _y, _z)
 # - 接続している枝のリスト(_edge_list)
-# - 線分番号を表す変数のリスト(_var_list)
 # - 終端の時に True となるフラグ(_is_terminal)
 # - 終端の時の線分番号(_terminal_id)
 # - ビアの時に True となるフラグ(_is_via)
@@ -25,13 +25,12 @@ from nlproblem import NlProblem
 class NlNode :
 
     ## @brief 初期化
-    def __init__(self, x, y, z) :
+    def __init__(self, id, x, y, z) :
+        self._id = id
         self._x = x
         self._y = x
         self._z = z
-        self._var = None
         self._edge_list = []
-        self._var_list = []
         self._is_terminal = False
         self._terminal_id = None
         self._is_via = False
@@ -50,6 +49,11 @@ class NlNode :
     ## @brief 枝を追加する．
     def add_edge(self, edge) :
         self._edge_list.append(edge)
+
+    ## @brief ID番号
+    @property
+    def id(self) :
+        return self._id
 
     ## @brief X座標
     @property
@@ -99,16 +103,23 @@ class NlNode :
 ## @brief 枝を表すクラス
 #
 # 以下のメンバを持つ．
+# - ID番号
 # - 両端の節点(_node1, _node2)と
 # - 自身が線分として選ばれている時 True
 #   となる命題変数の番号(_var)を持つ．
 class NlEdge :
 
     ## @brief 初期化
-    def __init__(self, node1, node2, var) :
+    def __init__(self, id, node1, node2, var) :
+        self._id = id
         self._node1 = node1
         self._node2 = node2
         self._var = var
+
+    ## @brief ID番号
+    @property
+    def id(self) :
+        return self._id
 
     ## @brief ノード1
     @property
@@ -131,16 +142,9 @@ class NlGraph :
         w = problem.width
         h = problem.height
         d = problem.depth
-        nn = problem.net_num
-        vn = problem.via_num
 
-        self._net_num = nn
-        self._via_num = vn
-
-        # ネット数の log を求める．
-        nn_log = 0
-        while (1 << nn_log) < nn :
-            nn_log += 1
+        self._net_num = problem.net_num
+        self._via_num = problem.via_num
 
         # 節点を作る．
         # node_array[x][y][z] に (x, y, z) の節点が入る．
@@ -215,7 +219,8 @@ class NlGraph :
     ## @brief 枝を作る．
     # @param[in] node1, node2 両端の節点
     def _new_edge(self, node1, node2) :
-        edge = NlEdge(node1, node2)
+        id = len(self._edge_list)
+        edge = NlEdge(id, node1, node2)
         self._edge_list.append(edge)
         node1.add_edge(edge)
         node2.add_edge(edge)
@@ -226,7 +231,8 @@ class NlGraph :
     #
     # 結果を self._node_list に入れる．
     def _new_node(self, x, y, z) :
-        node = NlNode(x, y, z)
+        id = len(self._node_list)
+        node = NlNode(id, x, y, z)
         self._node_list.append(node)
 
         return node
