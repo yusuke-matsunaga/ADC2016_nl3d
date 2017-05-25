@@ -17,7 +17,6 @@ from nlproblem import NlProblem
 # 以下のメンバを持つ．
 # - 座標(_x, _y, _z)
 # - 接続している枝のリスト(_edge_list)
-# - 線分番号を表す変数のリスト(_var_list)
 # - 終端の時に True となるフラグ(_is_terminal)
 # - 終端の時の線分番号(_terminal_id)
 # - ビアの時に True となるフラグ(_is_via)
@@ -29,9 +28,7 @@ class NlNode :
         self._x = x
         self._y = x
         self._z = z
-        self._var = None
         self._edge_list = []
-        self._var_list = []
         self._is_terminal = False
         self._terminal_id = None
         self._is_via = False
@@ -119,6 +116,15 @@ class NlEdge :
     @property
     def node2(self) :
         return self._node2
+
+    ## @brief 反対のノードを返す．
+    def alt_node(self, node) :
+        if node == self._node1 :
+            return self._node2
+        elif node == self._node2 :
+            return self._node1
+        else :
+            assert False
 
 
 ## @brief ナンバーリンクの問題を表すグラフ
