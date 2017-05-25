@@ -43,25 +43,24 @@ class SatSolver :
 
 
     ## @brief 節を追加する．
-    # @param[in] lit_list 節のリテラルのリスト
+    # @param[in] args 節のリテラルのリスト
     #
     # リテラルは 0 以外の整数で，絶対値が番号を
     # 符号が極性を表す．
     # たとえば 3 なら 3番目の変数の肯定
     # -1 なら 1番目の変数の否定を表す．
-    def add_clause(self, lit_list) :
-        for lit in lit_list :
-            if lit > 0 :
-                varid = lit
-            elif lit < 0 :
-                varid = -lit
-            else :
-                print('Error in add_clause(), 0 is not allowed literal.')
-                return
-            if varid > self._var_count :
-                print('Error in add_clause(), {} is out of range'.format(lit))
-                return
-        self._clause_list.append(lit_list)
+    def add_clause(self, *args) :
+        if isinstance(args, int) :
+            # singleton の場合
+            lit = args
+            if self._check_lit(lit) :
+                self._clause_list.append([lit])
+        else :
+            # リストの場合
+            for lit in args :
+                if not self._check_lit(lit) :
+                    return
+            self._clause_list.append(args)
 
 
     ## @brief SAT問題を解く．
@@ -141,3 +140,18 @@ class SatSolver :
             os.remove(output_file)
 
         return result, model
+
+
+    ## @brief リテラルが適正な値かチェックする．
+    def _check_lit(self, lit) :
+        if lit > 0 :
+            varid = lit
+        elif lit < 0 :
+            varid = -lit
+        else :
+            print('Error in add_clause(), 0 is not allowed as a literal value.')
+            return False
+        if varid > self._var_count :
+            print('Error in add_clause(), {} is out of range'.format(lit))
+            return False
+        return True

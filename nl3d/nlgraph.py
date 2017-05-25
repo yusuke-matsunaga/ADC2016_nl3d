@@ -7,9 +7,9 @@
 # Copyright (C) 2017 Yusuke Matsunaga
 # All rights reserved.
 
-from nlpoint import NlPoint
-from nlvia import NlVia
-from nlproblem import NlProblem
+from nl3d.nlpoint import NlPoint
+from nl3d.nlvia import NlVia
+from nl3d.nlproblem import NlProblem
 
 
 ## @brief 節点を表すクラス
@@ -104,17 +104,14 @@ class NlNode :
 #
 # 以下のメンバを持つ．
 # - ID番号
-# - 両端の節点(_node1, _node2)と
-# - 自身が線分として選ばれている時 True
-#   となる命題変数の番号(_var)を持つ．
+# - 両端の節点(_node1, _node2)
 class NlEdge :
 
     ## @brief 初期化
-    def __init__(self, id, node1, node2, var) :
+    def __init__(self, id, node1, node2) :
         self._id = id
         self._node1 = node1
         self._node2 = node2
-        self._var = var
 
     ## @brief ID番号
     @property
@@ -130,6 +127,15 @@ class NlEdge :
     @property
     def node2(self) :
         return self._node2
+
+    ## @brief 反対側のノードを返す．
+    def alt_node(self, node) :
+        if node == self._node1 :
+            return self._node2
+        elif node == self._node2 :
+            return self._node1
+        else :
+            assert False
 
 
 ## @brief ナンバーリンクの問題を表すグラフ
@@ -149,10 +155,12 @@ class NlGraph :
         # 節点を作る．
         # node_array[x][y][z] に (x, y, z) の節点が入る．
         # Python 特有の内包表記で one-liner で書けるけど1行が長すぎ．
+        self._node_list = []
         node_array = [[[self._new_node(x, y, z) for z in range(0, d)] \
                        for y in range(0, h)] for x in range(0, w)]
 
         # 枝を作る．
+        self._edge_list = []
         for z in range(0, d) :
             # 水平の枝を作る．
             for x in range(0, w - 1) :
@@ -172,7 +180,7 @@ class NlGraph :
 
         # 端子の印をつける．
         self._terminal_node_pair_list = []
-        for net_id, (label, s, e) in problem.net_list() :
+        for net_id, (label, s, e) in enumerate(problem.net_list()) :
             node1 = node_array[s.x][s.y][s.z]
             node2 = node_array[e.x][e.y][e.z]
             node1.set_terminal(net_id)
@@ -180,7 +188,7 @@ class NlGraph :
             self._terminal_node_pair_list.append((node1, node2))
 
         # ビアの印をつける．
-        for via_id, via in problem.via_list() :
+        for via_id, via in enumerate(problem.via_list()) :
             for z in range(via.z1, via.z2 - via.z1 + 1) :
                 node = node_array[via.x][via.y][z]
                 node.set_via(via_id)
@@ -213,7 +221,7 @@ class NlGraph :
     ## @brief 端点のノード対を返す．
     # @param[in] net_id 線分番号
     def terminal_node_pair(self, net_id) :
-        return self._terminal_node_pair[net_id]
+        return self._terminal_node_pair_list[net_id]
 
 
     ## @brief 枝を作る．

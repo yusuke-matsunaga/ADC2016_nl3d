@@ -21,9 +21,9 @@ if __name__ == '__main__' :
     v2 = solver.new_variable()
 
     # v1 + v2'
-    solver.add_clause([v1, -v2])
+    solver.add_clause(v1, -v2)
     # v1'
-    solver.add_clause([-v1])
+    solver.add_clause(-v1)
 
     # なので結果は v1 = 0, v2 = 0 で SAT
     result, model = solver.solve()
