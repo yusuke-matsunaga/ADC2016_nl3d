@@ -21,6 +21,8 @@ def solve_nlink(graph, solver) :
 
     enc.make_base_constraint(True)
     enc.make_ushape_constraint()
+    enc.make_wshape_constraint()
+    enc.make_w2shape_constraint()
 
     # SAT問題を解く．
     result, model = solver.solve()

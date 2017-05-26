@@ -32,8 +32,6 @@ if __name__ == '__main__' :
 
         graph = nl3d.NlGraph(problem)
 
-        graph.dump()
-
         solver = nl3d.sat.SatSolver('minisat_static')
 
         nl3d.solve_nlink(graph, solver)

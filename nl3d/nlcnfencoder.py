@@ -108,6 +108,141 @@ class NlCnfEncoder :
                 solver.add_clause(-var2, -var3, -var4)
 
 
+    ## @brief 2x3マスのコの字経路を禁止する制約を作る．
+    #
+    # node_00 -- edge_h1 -- node_10 -- edge_h2 -- node_20
+    #    |                     |                     |
+    #    |                     |                     |
+    # edge_v1               edge_??               edge_v2
+    #    |                     |                     |
+    #    |                     |                     |
+    # node_01 -- edge_h3 -- node_11 -- edge_h4 -- node_21
+    #
+    # 1: node_11 が終端かビアでない限り，edge_v1, edge_h1, edge_h2, edge_v2
+    #    という経路は使えない．
+    # 2: node_10 が終端化ビアでない限り，edge_v1, edge_h3, edge_h4, edge_v2
+    #    という経路は使えない．
+    #
+    # これをタテ・ヨコの２方向に対して行う．
+    def make_wshape_constraint(self) :
+        solver = self._solver
+        for node_00 in self._graph.node_list :
+            # d は方向(0: ヨコ, 1: タテ)
+            for d in range(0, 2) :
+                edge_h1 = node_00.lower_edge if d else node_00.right_edge
+                if edge_h1 == None :
+                    continue
+                node_10 = edge_h1.alt_node(node_00)
+                if node_10.is_block :
+                    continue
+
+                edge_h2 = node_10.lower_edge if d else node_10.right_edge
+                if edge_h2 == None :
+                    continue
+                node_20 = edge_h2.alt_node(node_10)
+
+                edge_v1 = node_00.right_edge if d else node_00.lower_edge
+                if edge_v1 == None :
+                    continue
+                edge_v2 = node_20.right_edge if d else node_20.lower_edge
+
+                node_01 = edge_v1.alt_node(node_00)
+                node_21 = edge_v2.alt_node(node_20)
+
+                edge_h3 = node_01.lower_edge if d else node_01.right_edge
+                node_11 = edge_h3.alt_node(node_01)
+                if node_11.is_block :
+                    continue
+
+                edge_h4 = node_11.lower_edge if d else node_11.right_edge
+
+                var1 = self._edge_var(edge_v1)
+                var4 = self._edge_var(edge_v2)
+                if not (node_00.is_block or node_20.is_block) :
+                    var2 = self._edge_var(edge_h1)
+                    var3 = self._edge_var(edge_h2)
+                    solver.add_clause(-var1, -var2, -var3, -var4)
+                if not (node_01.is_block or node_21.is_block) :
+                    var2 = self._edge_var(edge_h3)
+                    var3 = self._edge_var(edge_h4)
+                    solver.add_clause(-var1, -var2, -var3, -var4)
+
+
+    ## @brief 2x4マスのコの字経路を禁止する制約を作る．
+    #
+    # node_00 -- edge_h1 -- node_10 -- edge_h2 -- node_20 -- edge_h3 -- node_30
+    #    |                     |                     |                     |
+    #    |                     |                     |                     |
+    # edge_v1               edge_??               edge_??               edge_v2
+    #    |                     |                     |                     |
+    #    |                     |                     |                     |
+    # node_01 -- edge_h4 -- node_11 -- edge_h5 -- node_21 -- edge_h6 -- node_31
+    #
+    # 1: node_11, node_21 が終端かビアでない限り，
+    #    edge_v1, edge_h1, edge_h2, edge_h3, edge_v2 という経路は使えない．
+    # 2: node_10, node_20 が終端かビアでない限り，
+    #    edge_v1, edge_h4, edge_h5, edge_h6, edge_v2 という経路は使えない．
+    #
+    # これをタテ・ヨコの２方向に対して行う．
+    def make_w2shape_constraint(self) :
+        solver = self._solver
+        for node_00 in self._graph.node_list :
+            # d は方向(0: ヨコ, 1: タテ)
+            for d in range(0, 2) :
+                edge_h1 = node_00.lower_edge if d else node_00.right_edge
+                if edge_h1 == None :
+                    continue
+                node_10 = edge_h1.alt_node(node_00)
+                if node_10.is_block :
+                    continue
+
+                edge_h2 = node_10.lower_edge if d else node_10.right_edge
+                if edge_h2 == None :
+                    continue
+                node_20 = edge_h2.alt_node(node_10)
+                if node_20.is_block :
+                    continue
+
+                edge_h3 = node_20.lower_edge if d else node_20.right_edge
+                if edge_h3 == None :
+                    continue
+                node_30 = edge_h3.alt_node(node_20)
+
+                edge_v1 = node_00.right_edge if d else node_00.lower_edge
+                if edge_v1 == None :
+                    continue
+                node_01 = edge_v1.alt_node(node_00)
+
+                edge_v2 = node_30.right_edge if d else node_30.lower_edge
+
+                edge_h4 = node_01.lower_edge if d else node_01.right_edge
+                node_11 = edge_h4.alt_node(node_01)
+                if node_11.is_block :
+                    continue
+
+                edge_h5 = node_11.lower_edge if d else node_11.right_edge
+                node_21 = edge_h5.alt_node(node_11)
+                if node_21.is_block :
+                    continue
+
+                edge_h6 = node_21.lower_edge if d else node_21.right_edge
+
+                node_31 = edge_h6.alt_node(node_21)
+
+                var_v1 = self._edge_var(edge_v1)
+                var_v2 = self._edge_var(edge_v2)
+                if not (node_00.is_block or node_30.is_block) :
+                    var_h1 = self._edge_var(edge_h1)
+                    var_h2 = self._edge_var(edge_h2)
+                    var_h3 = self._edge_var(edge_h3)
+                    solver.add_clause(-var_v1, -var_v2, -var_h1, -var_h2, -var_h3)
+                if not (node_01.is_block or node_31.is_block) :
+                    var_h4 = self._edge_var(edge_h4)
+                    var_h5 = self._edge_var(edge_h5)
+                    var_h6 = self._edge_var(edge_h6)
+                    solver.add_clause(-var_v1, -var_v2, -var_h4, -var_h5, -var_h6)
+
+
     ## @brief SATモデルから線分リストを作る．
     def model_to_route(self, model, net_id) :
         start, end = self._graph.terminal_node_pair(net_id)
