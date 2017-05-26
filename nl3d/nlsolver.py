@@ -19,6 +19,9 @@ def solve_nlink(graph, solver) :
     # 問題を表す CNF式を生成する．
     enc = NlCnfEncoder(graph, solver)
 
+    enc.make_base_constraint(True)
+    enc.make_ushape_constraint()
+
     # SAT問題を解く．
     result, model = solver.solve()
 
@@ -27,8 +30,18 @@ def solve_nlink(graph, solver) :
         print("OK")
 
         # SATモデルから解を作る．
-        route_list = [_model_to_route(graph, enc, model, net_id) \
+        route_list = [enc.model_to_route(model, net_id) \
                       for net_id in range(0, graph.net_num)]
+
+        for net_id in range(0, graph.net_num) :
+            route = route_list[net_id]
+            print('Net#{}'.format(net_id))
+            dash = ''
+            for node in route :
+                print(dash, end = '')
+                dash = ' - '
+                print('({}, {}, {})'.format(node.x, node.y, node.z), end='')
+            print('')
 
     elif result == SatBool3.B3False :
         # 解けなかった．
@@ -36,28 +49,3 @@ def solve_nlink(graph, solver) :
     elif result == SatBool3.B3X :
         # アボートした．
         print("Abort")
-
-
-## @brief モデルから線分(NlNode のリスト)を作る
-def _model_to_route(graph, enc, model, net_id) :
-    start, end = graph.terminal_node_pair(net_id)
-
-    prev = None
-    node = start
-    route = []
-    while node != end :
-        route.append(node)
-        next = None
-        for edge in node.edge_list :
-            if model[enc.edge_var(edge)] != SatBool3.B3True :
-                continue
-            node1 = edge.alt_node(node)
-            if node1 == prev :
-                continue
-            next = node1
-        assert next != None
-        prev = node
-        node = next
-    route.append(end)
-
-    return route

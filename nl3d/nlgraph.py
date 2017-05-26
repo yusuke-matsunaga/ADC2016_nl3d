@@ -18,19 +18,26 @@ from nl3d.nlproblem import NlProblem
 # - ID番号
 # - 座標(_x, _y, _z)
 # - 接続している枝のリスト(_edge_list)
+# - 各方向の枝(_right_edge, _left_edge, _upper_edge, _lower_edge)
 # - 終端の時に True となるフラグ(_is_terminal)
 # - 終端の時の線分番号(_terminal_id)
 # - ビアの時に True となるフラグ(_is_via)
 # - ビアの時のビア番号(_via_id)
+#
+# ただし @property 属性のついたメンバ関数をメンバのようにアクセスすること．
 class NlNode :
 
     ## @brief 初期化
     def __init__(self, id, x, y, z) :
         self._id = id
         self._x = x
-        self._y = x
+        self._y = y
         self._z = z
         self._edge_list = []
+        self._right_edge = None
+        self._left_edge = None
+        self._upper_edge = None
+        self._lower_edge = None
         self._is_terminal = False
         self._terminal_id = None
         self._is_via = False
@@ -47,8 +54,25 @@ class NlNode :
         self._via_id = via_id
 
     ## @brief 枝を追加する．
-    def add_edge(self, edge) :
+    # @param[in] edge 対象の枝
+    # @param[in] dir 方向
+    #
+    # dir の意味は以下の通り
+    # - 0: 右
+    # - 1: 左
+    # - 2: 上
+    # - 3: 下
+    def add_edge(self, edge, dir) :
         self._edge_list.append(edge)
+        if dir == 0 :
+            self._right_edge = edge
+        elif dir == 1 :
+            self._left_edge = edge
+        elif dir == 2 :
+            self._upper_edge = edge
+        elif dir == 3 :
+            self._lower_edge = edge
+
 
     ## @brief ID番号
     @property
@@ -75,6 +99,34 @@ class NlNode :
     def edge_list(self) :
         return self._edge_list
 
+    ## @brief 右方向の枝を返す．
+    #
+    # なければ None を返す．
+    @property
+    def right_edge(self) :
+        return self._right_edge
+
+    ## @brief 左方向の枝を返す．
+    #
+    # なければ None を返す．
+    @property
+    def left_edge(self) :
+        return self._left_edge
+
+    ## @brief 上方向の枝を返す．
+    #
+    # なければ None を返す．
+    @property
+    def upper_edge(self) :
+        return self._upper_edge
+
+    ## @brief 下方向の枝を返す．
+    #
+    # なければ None を返す．
+    @property
+    def lower_edge(self) :
+        return self._lower_edge
+
     ## @brief 終端フラグ
     @property
     def is_terminal(self) :
@@ -98,6 +150,25 @@ class NlNode :
     @property
     def via_id(self) :
         return self._via_id
+
+
+    ## @brief 終端かビアのとき True となるフラグ
+    @property
+    def is_block(self) :
+        return self._is_terminal or self._is_via
+
+
+    ## @brief 内容を表す文字列を返す．
+    def str(self) :
+        ans = '#{}: ({}, {}, {})'.format(self.id, self.x, self.y, self.z)
+
+        if self.is_terminal :
+            ans += ' [Net#{}]'.format(self.terminal_id)
+
+        if self.is_via :
+            ans += ' [Via#{}]'.format(self.via_id)
+
+        return ans
 
 
 ## @brief 枝を表すクラス
@@ -138,6 +209,13 @@ class NlEdge :
             assert False
 
 
+    ## @brief 内容を表す文字列を返す．
+    def str(self) :
+        return '#{}: ({}, {}, {}) - ({}, {}, {})'.format(self.id, \
+                                                         self.node1.x, self.node1.y, self.node1.z,\
+                                                         self.node2.x, self.node2.y, self.node2.z)
+
+
 ## @brief ナンバーリンクの問題を表すグラフ
 class NlGraph :
 
@@ -168,7 +246,7 @@ class NlGraph :
                     # (x, y) - (x + 1, y) を結ぶ枝
                     node1 = node_array[x][y][z]
                     node2 = node_array[x + 1][y][z]
-                    self._new_edge(node1, node2)
+                    self._new_edge(node1, node2, True)
 
             # 垂直の枝を作る．
             for x in range(0, w) :
@@ -176,7 +254,7 @@ class NlGraph :
                     # (x, y) - (x, y + 1) を結ぶ枝
                     node1 = node_array[x][y][z]
                     node2 = node_array[x][y + 1][z]
-                    self._new_edge(node1, node2)
+                    self._new_edge(node1, node2, False)
 
         # 端子の印をつける．
         self._terminal_node_pair_list = []
@@ -226,12 +304,19 @@ class NlGraph :
 
     ## @brief 枝を作る．
     # @param[in] node1, node2 両端の節点
-    def _new_edge(self, node1, node2) :
+    # @param[in] horizontal 水平方向の枝のとき True にする．
+    def _new_edge(self, node1, node2, horizontal) :
         id = len(self._edge_list)
         edge = NlEdge(id, node1, node2)
         self._edge_list.append(edge)
-        node1.add_edge(edge)
-        node2.add_edge(edge)
+        if horizontal :
+            dir1 = 0
+            dir2 = 1
+        else :
+            dir1 = 3
+            dir2 = 4
+        node1.add_edge(edge, dir1)
+        node2.add_edge(edge, dir2)
 
 
     ## @brief ノードを作る．
@@ -244,3 +329,15 @@ class NlGraph :
         self._node_list.append(node)
 
         return node
+
+
+    ## @brief 内容を出力する．
+    def dump(self) :
+        print('Nodes:')
+        for node in self._node_list :
+            print(node.str())
+
+        print('')
+        print('Edges:')
+        for edge in self._edge_list :
+            print(edge.str())
