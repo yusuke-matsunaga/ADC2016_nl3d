@@ -7,85 +7,17 @@
 # Copyright (C) 2017 Yusuke Matsunaga
 # All rights reserved.
 
-from nlgraph import NlNode, NlEdge, NlGraph
+from nl3d.nlgraph import NlNode, NlEdge, NlGraph
+from nl3d.nlcnfencoder import NlCnfEncoder
 from nl3d.sat.satsolver import SatSolver
-from nl3d.sat.satbool3 import Sat
+from nl3d.sat.satbool3 import SatBool3
 
 ## @brief 問題を表すCNF式を生成する．
 # @param[in] graph 問題を表すグラフ(NlGraph)
 # @param[in] solver SATソルバ
 def solve_nlink(graph, solver) :
-    nn = graph.net_num
-    vn = graph.via_num
-
-    # 枝に対応する変数を作る．
-    # 結果は edge_var_dict に edge をキーとして格納する．
-    edge_var_dict = [edge:solver.new_variable() for edge in graph.edge_list]
-
-    # 節点のラベルを表す変数のリストを作る．
-    # 結果は node_vars_dict に node をキーとして格納する．
-    node_vars_dict = [node:[solver.new_variable() for in in range(0, nn)] \
-                      for node in graph.node_list]
-
-    # ビアと線分の割り当てを表す変数を作る．
-    # nv_map[net_id][via_id] に net_id の線分を via_id のビアに接続する時 True となる変数を入れる．
-    nv_map = [[solver.new_variable() for via_id in range(0, nv)] for net_id in range(0, nn)]
-
-    # 各節点に対して隣接する枝の条件を作る．
-    # 具体的には
-    # - 終端の場合
-    #   ただ一つの枝のみが選ばれる．
-    # - ビアの場合
-    #   nv_map の変数
-    # - それ以外
-    #   全て選ばれないか2つの枝が選ばれる．
-    for node in graph.node_list :
-        # node に接続している枝の変数のリスト
-        evar_list = [edge_var_dict[edge] for edge in node.edge_list]
-
-        # node のラベルを表す変数のリスト
-        lvar_list = node_vars_dict[node]
-
-        if node.is_terminal :
-            # node が終端の場合
-            # ラベルの変数を固定する．
-            tid = node.terminal_id
-            for i in range(0, nn) :
-                lvar = lvar_list[i]
-                if i == tid :
-                    solver.add_clause(lvar)
-                else :
-                    solver.add_clause(-lvar)
-            # ただ一つの枝が選ばれる．
-            _make_one(solver, evar_list)
-        elif node.is_via :
-            # node がビアの場合
-            # この層に終端を持つ線分と結びついている時はただ一つの枝が選ばれる．
-            vid = node.via_id
-            for net_id in range(0, nn) :
-                cvar = nv_map[net_id][vid]
-                node1, node2 = graph.terminal_node_pair(net_id)
-                if (node1.z == node2.z) or (node1.z != node.z and node2.z != node.z) :
-                    # このビアは net_id の線分には使えない．
-                    # このノードに接続する枝は選ばれない．
-                    _make_conditional_zero(cvar, evar_list)
-                else :
-                    # このビアを終端と同様に扱う．
-                    _make_conditional_one(cvar, evar_list)
-        else :
-            # それ以外の場合は０か２個の枝が選ばれる．
-            _make_zero_or_two(solver, evar_list)
-
-    # 枝が選択された時にその両端のノードのラベルが等しくなるという制約を作る．
-    for edge in graph.edge_list :
-        evar = edge_var_dict[edge]
-        nvar_list1 = node_vars_dict[edge.node1]
-        nvar_list2 = node_vars_dict[edge.node2]
-        for i in range(0, nn) :
-            nvar1 = nvar_list1[i]
-            nvar2 = nvar_list2[i]
-            solver.add_clause(-evar, -nvar1,  nvar2)
-            solver.add_clause(-evar,  nvar1, -nvar2)
+    # 問題を表す CNF式を生成する．
+    enc = NlCnfEncoder(graph, solver)
 
     # SAT問題を解く．
     result, model = solver.solve()
@@ -93,6 +25,11 @@ def solve_nlink(graph, solver) :
     if result == SatBool3.B3True :
         # 解けた．
         print("OK")
+
+        # SATモデルから解を作る．
+        route_list = [_model_to_route(graph, enc, model, net_id) \
+                      for net_id in range(0, graph.net_num)]
+
     elif result == SatBool3.B3False :
         # 解けなかった．
         print("NG")
@@ -101,107 +38,26 @@ def solve_nlink(graph, solver) :
         print("Abort")
 
 
-## @brief リストの中の変数が1つだけ True となる制約を作る．
-def _make_one(solver, var_list) :
-    n = len(var_list)
-    # 要素数で場合分け
-    if n == 2 :
-        var0 = var_list[0]
-        var1 = var_list[1]
-        solver.add_clause(-var0, -var1)
-        solver.add_clause( var0,  var1)
-    elif n == 3 :
-        var0 = var_list[0]
-        var1 = var_list[1]
-        var2 = var_list[2]
-        solver.add_clause(-var0, -var1       )
-        solver.add_clause(-var0,      , -var2)
-        solver.add_clause(       -var1, -var2)
-        solver.add_clause( var0,  var1,  var2)
-    elif n == 4 :
-        var0 = var_list[0]
-        var1 = var_list[1]
-        var2 = var_list[2]
-        var3 = var_list[3]
-        solver.add_clause(-var0, -var1              )
-        solver.add_clause(-var0,        -var2       )
-        solver.add_clause(-var0,               -var3)
-        solver.add_clause(       -var1, -var2       )
-        solver.add_clause(       -var1,        -var3)
-        solver.add_clause(              -var2, -var3)
-        solver.add_clause( var0,  var1,  var2,  var3)
-    else :
-        assert False
+## @brief モデルから線分(NlNode のリスト)を作る
+def _model_to_route(graph, enc, model, net_id) :
+    start, end = graph.terminal_node_pair(net_id)
 
+    prev = None
+    node = start
+    route = []
+    while node != end :
+        route.append(node)
+        next = None
+        for edge in node.edge_list :
+            if model[enc.edge_var(edge)] != SatBool3.B3True :
+                continue
+            node1 = edge.alt_node(node)
+            if node1 == prev :
+                continue
+            next = node1
+        assert next != None
+        prev = node
+        node = next
+    route.append(end)
 
-## @brief 条件付きでリストの中の変数がすべて False となる制約を作る．
-def _make_conditional_zero(solver, cvar, var_list) :
-    for var in var_list :
-        solver.add_clause(-cvar, -var)
-
-
-## @brief 条件付きでリストの中の変数が1つだけ True となる制約を作る．
-def _make_conditional_one(solver, cvar, var_list) :
-    n = len(var_list)
-    # 要素数で場合分け
-    if n == 2 :
-        var0 = var_list[0]
-        var1 = var_list[1]
-        solver.add_clause(-cvar, -var0, -var1)
-        solver.add_clause(-cvar,  var0,  var1)
-    elif n == 3 :
-        var0 = var_list[0]
-        var1 = var_list[1]
-        var2 = var_list[2]
-        solver.add_clause(-cvar, -var0, -var1       )
-        solver.add_clause(-cvar, -var0,      , -var2)
-        solver.add_clause(-cvar,        -var1, -var2)
-        solver.add_clause(-cvar,  var0,  var1,  var2)
-    elif n == 4 :
-        var0 = var_list[0]
-        var1 = var_list[1]
-        var2 = var_list[2]
-        var3 = var_list[3]
-        solver.add_clause(-cvar, -var0, -var1              )
-        solver.add_clause(-cvar, -var0,        -var2       )
-        solver.add_clause(-cvar, -var0,               -var3)
-        solver.add_clause(-cvar,        -var1, -var2       )
-        solver.add_clause(-cvar,        -var1,        -var3)
-        solver.add_clause(-cvar,               -var2, -var3)
-        solver.add_clause(-cvar,  var0,  var1,  var2,  var3)
-    else :
-        assert False
-
-
-## @brief リストの中の変数が0個か2個 True になるという制約
-def _make_zero_or_two(solver, var_list) :
-    n = len(var_list)
-    # 要素数で場合分け
-    if n == 2 :
-        var0 = var_list[0]
-        var1 = var_list[1]
-        solver.add_clause( var0, -var1)
-        solver.add_clause(-var0,  var1)
-    elif n == 3 :
-        var0 = var_list[0]
-        var1 = var_list[1]
-        var2 = var_list[2]
-        solver.add_clause(-var0, -var1, -var2)
-        solver.add_clause( var0,  var1, -var2)
-        solver.add_clause( var0, -var1,  var2)
-        solver.add_clause(-var0,  var1,  var2)
-    elif n == 4 :
-        var0 = var_list[0]
-        var1 = var_list[1]
-        var2 = var_list[2]
-        var3 = var_list[3]
-        solver.add_clause(-var0, -var1, -var2       )
-        solver.add_clause(-var0, -var1,      , -var3)
-        solver.add_clause(-var0,        -var2, -var3)
-        solver.add_clause(       -var1, -var2, -var3)
-        solver.add_clause( var0,  var1,  var2, -var3)
-        solver.add_clause( var0,  var1, -var2,  var3)
-        solver.add_clause( var0, -var1,  var2,  var3)
-        solver.add_clause(-var0,  var1,  var2,  var3)
-    else :
-        assert False
+    return route
