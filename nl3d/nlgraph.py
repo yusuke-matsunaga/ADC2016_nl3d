@@ -223,9 +223,9 @@ class NlGraph :
     #
     # @param[in] problem 問題を表すオブジェクト(NlProblem)
     def __init__(self, problem) :
-        w = problem.width
-        h = problem.height
-        d = problem.depth
+        self._width = problem.width
+        self._height = problem.height
+        self._depth = problem.depth
 
         self._net_num = problem.net_num
         self._via_num = problem.via_num
@@ -234,23 +234,25 @@ class NlGraph :
         # node_array[x][y][z] に (x, y, z) の節点が入る．
         # Python 特有の内包表記で one-liner で書けるけど1行が長すぎ．
         self._node_list = []
-        node_array = [[[self._new_node(x, y, z) for z in range(0, d)] \
-                       for y in range(0, h)] for x in range(0, w)]
+        node_array = [[[self._new_node(x, y, z)
+                        for z in range(0, self._depth)] \
+                       for y in range(0, self._height)] \
+                      for x in range(0, self._width)]
 
         # 枝を作る．
         self._edge_list = []
-        for z in range(0, d) :
+        for z in range(0, self._depth) :
             # 水平の枝を作る．
-            for x in range(0, w - 1) :
-                for y in range(0, h) :
+            for x in range(0, self._width - 1) :
+                for y in range(0, self._height) :
                     # (x, y) - (x + 1, y) を結ぶ枝
                     node1 = node_array[x][y][z]
                     node2 = node_array[x + 1][y][z]
                     self._new_edge(node1, node2, True)
 
             # 垂直の枝を作る．
-            for x in range(0, w) :
-                for y in range(0, h - 1) :
+            for x in range(0, self._width) :
+                for y in range(0, self._height - 1) :
                     # (x, y) - (x, y + 1) を結ぶ枝
                     node1 = node_array[x][y][z]
                     node2 = node_array[x][y + 1][z]
@@ -270,6 +272,23 @@ class NlGraph :
             for z in range(via.z1, via.z2 - via.z1 + 1) :
                 node = node_array[via.x][via.y][z]
                 node.set_via(via_id)
+
+    ## @brief 問題の幅
+    @property
+    def width(self) :
+        return self._width
+
+
+    ## @brief 問題の高さ
+    @property
+    def height(self) :
+        return self._height
+
+
+    ## @brief 問題の層数
+    @property
+    def depth(self) :
+        return self._depth
 
 
     ## @brief ネット数

@@ -34,4 +34,9 @@ if __name__ == '__main__' :
 
         solver = nl3d.sat.SatSolver('minisat_static')
 
-        nl3d.solve_nlink(graph, solver)
+        status, solution = nl3d.solve_nlink(graph, solver)
+
+        print(status)
+
+        if status == 'OK' :
+            solution.print(sys.stdout)

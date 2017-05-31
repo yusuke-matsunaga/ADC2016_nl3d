@@ -295,9 +295,9 @@ class NlCnfEncoder :
             # node がビアの場合
             # この層に終端を持つ線分と結びついている時はただ一つの枝が選ばれる．
             vid = node.via_id
-            for net_id in range(0, nn) :
+            for net_id in range(0, self._graph.net_num) :
                 cvar = self._nv_map[net_id][vid]
-                node1, node2 = graph.terminal_node_pair(net_id)
+                node1, node2 = self._graph.terminal_node_pair(net_id)
                 if (node1.z == node2.z) or (node1.z != node.z and node2.z != node.z) :
                     # このビアは net_id の線分には使えない．
                     # このノードに接続する枝は選ばれない．
