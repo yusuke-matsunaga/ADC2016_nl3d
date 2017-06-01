@@ -7,7 +7,9 @@
 # Copyright (C) 2017 Yusuke Matsunaga
 # All rights reserved.
 
+import math
 from nl3d.nlgraph import NlNode, NlEdge, NlGraph
+from nl3d.nlsolution import NlSolution
 from nl3d.sat.satsolver import SatSolver
 from nl3d.sat.satbool3 import SatBool3
 
@@ -33,10 +35,11 @@ class NlCnfEncoder :
         self._edge_var_list = [solver.new_variable() for edge in graph.edge_list]
 
         # 節点のラベルを表す変数のリストを作る．
-        # 節点のラベルは nn 個の変数で表す(one-hotエンコーディング)
+        # 節点のラベルは log2(nn + 1) 個の変数で表す(binaryエンコーディング)
         # 結果は node_vars_list に格納する．
         # _node_vars_list[node.id] に node に対応する変数のリストが入る．
-        self._node_vars_list = [[solver.new_variable() for i in range(0, nn)] \
+        nn_log2 = math.ceil(math.log2(nn + 1))
+        self._node_vars_list = [[solver.new_variable() for i in range(0, nn_log2)] \
                                 for node in graph.node_list]
 
         # ビアと線分の割り当てを表す変数を作る．
@@ -44,6 +47,7 @@ class NlCnfEncoder :
         self._nv_map = [[solver.new_variable() \
                          for via_id in range(0, vn)] \
                         for net_id in range(0, nn)]
+
 
     ## @brief 基本的な制約を作る．
     # @param[in] no_slack すべてのマス目を使う制約を入れるとき True にするフラグ
@@ -55,6 +59,17 @@ class NlCnfEncoder :
         # 枝が選択された時にその両端のノードのラベルが等しくなるという制約を作る．
         for edge in self._graph.edge_list :
             self._make_adj_nodes_constraint(edge)
+
+        # 各ビアについてただ1つの線分が割り当てられるという制約を作る．
+        for via_id in range(0, self._graph.via_num) :
+            self._make_via_net_constraint(via_id)
+
+        # 各線分についてただ一つのビアが割り当てられるという制約を作る．
+        #for net_id in range(0, self._graph.net_num) :
+        #    self._make_net_via_constraint(net_id)
+
+
+
 
     ## @brief U字(コの字)制約を作る．
     #
@@ -243,29 +258,50 @@ class NlCnfEncoder :
                     solver.add_clause(-var_v1, -var_v2, -var_h4, -var_h5, -var_h6)
 
 
-    ## @brief SATモデルから線分リストを作る．
-    def model_to_route(self, model, net_id) :
-        start, end = self._graph.terminal_node_pair(net_id)
+    ## @brief SATモデルから解(NlSolution)を作る．
+    def model_to_solution(self, model) :
+        solution = NlSolution()
+        solution.set_size(self._graph.width, self._graph.height, self._graph.depth)
+        for net_id in range(0, self._graph.net_num) :
+            start, end = self._graph.terminal_node_pair(net_id)
+            print('net_id: {}, start = {}, end = {}'.format(net_id, start.str(), end.str()))
+            prev = None
+            node = start
+            while node != end :
+                solution.set_val(node.x, node.y, node.z, net_id + 1)
+                next = None
+                for edge in node.edge_list :
+                    if model[self._edge_var(edge)] != SatBool3.B3True :
+                        continue
+                    node1 = edge.alt_node(node)
+                    if node1 == prev :
+                        continue
+                    next = node1
+                if next == None :
+                    # このノードがビアなら end の層まで移動する．
+                    assert node.is_via
+                    assert start.z != end.z
+                    if start.z < end.z :
+                        for i in range(start.z, end.z) :
+                            solution.set_val(node.x, node.y, i + 1, net_id + 1)
+                    else :
+                        for i in range(start.z, end.z, -1) :
+                            solution.set_val(node.x, node.y, i - 1, net_id + 1)
+                    next = self._graph.node(node.x, node.y, end.z)
+                assert next != None
+                prev = node
+                node = next
+                var_list = self._node_vars_list[node.id]
+                pat = ""
+                for var in var_list :
+                    if model[var] == SatBool3.B3True :
+                        pat = '1' + pat
+                    else :
+                        pat = '0' + pat
+                print(' -> {} [{}]'.format(node.str(), pat))
+            solution.set_val(node.x, node.y, node.z, net_id + 1)
 
-        prev = None
-        node = start
-        route = []
-        while node != end :
-            route.append(node)
-            next = None
-            for edge in node.edge_list :
-                if model[self._edge_var(edge)] != SatBool3.B3True :
-                    continue
-                node1 = edge.alt_node(node)
-                if node1 == prev :
-                    continue
-                next = node1
-            assert next != None
-            prev = node
-            node = next
-        route.append(end)
-
-        return route
+        return solution
 
 
     ## @brief ノードに接続する枝に関する制約を作る．
@@ -317,6 +353,66 @@ class NlCnfEncoder :
                 self._make_zero_or_two_hot(evar_list)
 
 
+    ## @brief via_id に関してただ一つの線分が選ばれるという制約を作る．
+    def _make_via_net_constraint(self, via_id) :
+        # このビアに関係のあるネットを調べる．
+        vnode_list =self._graph.via_node_list(via_id)
+        one_list = []
+        zero_list = []
+        for net_id in range(0, self._graph.net_num) :
+            start, end = self._graph.terminal_node_pair(net_id)
+            found = False
+            if start.z != end.z :
+                for node in vnode_list :
+                    if node.z == start.z or node.z == end.z :
+                        found = True
+                        break
+            if found :
+                one_list.append(net_id)
+            else :
+                zero_list.append(net_id)
+
+        # one_list に含まれる線分番号がこのビアに関係するネット
+        vars_list = [self._nv_map[net_id][via_id] for net_id in one_list]
+        # この変数に対する one-hot 制約を作る．
+        self._make_one_hot(vars_list)
+        # zero_list の変数は 0 に固定する．
+        for net_id in zero_list :
+            var = self._nv_map[net_id][via_id]
+            self._solver.add_clause(-var)
+
+
+    ## @brief net_id に関してただ一つのビアが選ばれるという制約を作る．
+    def _make_net_via_constraint(self, net_id) :
+        # このネットに関係のあるビアを調べる．
+        start, end = self._graph.terminal_node_pair(net_id)
+        one_list = []
+        zero_list = []
+        if start.z == end.z :
+            zero_list = range(0, self._graph.via_num)
+        else :
+            for via_id in range(0, self._graph.via_num) :
+                vnode_list = self._graph.via_node_list(via_id)
+                found = False
+                for node in vnode_list :
+                    if node.z == start.z or node.z == end.z :
+                        found = True
+                        break
+                if found :
+                    one_list.append(via_id)
+                else :
+                    zero_list.append(via_id)
+
+        # one_list に含まれるビア番号がこのネットに関係するビア
+        vars_list = [self._nv_map[net_id][via_id] for via_id in one_list]
+        # この変数に対する one-hot 制約を作る．
+        self._make_one_hot(vars_list)
+        # zero_list の変数は 0 に固定する．
+        for via_id in zero_list :
+            var = self._nv_map[net_id][via_id]
+            self._solver.add_clause(-var)
+
+
     ## @brief 枝の両端のノードのラベルに関する制約を作る．
     # @param[in] edge 対象の枝
     #
@@ -325,7 +421,8 @@ class NlCnfEncoder :
         evar = self._edge_var_list[edge.id]
         nvar_list1 = self._node_vars_list[edge.node1.id]
         nvar_list2 = self._node_vars_list[edge.node2.id]
-        for i in range(0, self._graph.net_num) :
+        n = len(nvar_list1)
+        for i in range(0, n) :
             nvar1 = nvar_list1[i]
             nvar2 = nvar_list2[i]
             self._make_conditional_equal(evar, nvar1, nvar2)
@@ -336,11 +433,15 @@ class NlCnfEncoder :
     # @param[in] net_id 固定する線分番号
     def _make_label_constraint(self, node, net_id) :
         lvar_list = self._node_vars_list[node.id]
+        pat = ''
         for i, lvar in enumerate(lvar_list) :
-            if i == net_id :
+            if (1 << i) & (net_id + 1) :
                 self._solver.add_clause(lvar)
+                pat = '1' + pat
             else :
                 self._solver.add_clause(-lvar)
+                pat = '0' + pat
+        print('make_label_constraint({}:{}[{}])'.format(node.str(), net_id, pat))
 
 
     ## @brief 条件付きでラベル値を固定する制約を作る．
@@ -349,11 +450,15 @@ class NlCnfEncoder :
     # @param[in] net_id 固定する線分番号
     def _make_conditional_label_constraint(self, cvar, node, net_id) :
         lvar_list = self._node_vars_list[node.id]
+        pat = ''
         for i, lvar in enumerate(lvar_list) :
-            if i == net_id :
+            if (1 << i) & (net_id + 1) :
                 self._solver.add_clause(-cvar, lvar)
+                pat = '1' + pat
             else :
                 self._solver.add_clause(-cvar, -lvar)
+                pat = '0' + pat
+        print('make_conditional_label_constraint({} -> {}:{}[{}])'.format(cvar, node.str(), net_id, pat))
 
 
     ## @brief 枝に対する変数番号を返す．
@@ -403,7 +508,13 @@ class NlCnfEncoder :
             solver.add_clause(              -var2, -var3)
             solver.add_clause( var0,  var1,  var2,  var3)
         else :
-            assert False
+            # 一般形
+            for i in range(0, n - 1) :
+                var0 = var_list[i]
+                for j in range(i + 1, n) :
+                    var1 = var_list[j]
+                    solver.add_clause(-var0, -var1)
+            solver.add_clause(var_list)
 
 
     ## @brief 条件付きでリストの中の変数が1つだけ True となる制約を作る．

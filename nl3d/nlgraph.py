@@ -97,6 +97,8 @@ class NlNode :
     ## @brief 接続している枝のリストを返す
     @property
     def edge_list(self) :
+        for edge in self._edge_list :
+            assert edge._node1 == self or edge._node2 == self
         return self._edge_list
 
     ## @brief 右方向の枝を返す．
@@ -234,10 +236,10 @@ class NlGraph :
         # node_array[x][y][z] に (x, y, z) の節点が入る．
         # Python 特有の内包表記で one-liner で書けるけど1行が長すぎ．
         self._node_list = []
-        node_array = [[[self._new_node(x, y, z)
-                        for z in range(0, self._depth)] \
-                       for y in range(0, self._height)] \
-                      for x in range(0, self._width)]
+        self._node_array = [[[self._new_node(x, y, z)
+                              for z in range(0, self._depth)] \
+                             for y in range(0, self._height)] \
+                            for x in range(0, self._width)]
 
         # 枝を作る．
         self._edge_list = []
@@ -246,32 +248,37 @@ class NlGraph :
             for x in range(0, self._width - 1) :
                 for y in range(0, self._height) :
                     # (x, y) - (x + 1, y) を結ぶ枝
-                    node1 = node_array[x][y][z]
-                    node2 = node_array[x + 1][y][z]
+                    node1 = self._node_array[x][y][z]
+                    node2 = self._node_array[x + 1][y][z]
                     self._new_edge(node1, node2, True)
 
             # 垂直の枝を作る．
             for x in range(0, self._width) :
                 for y in range(0, self._height - 1) :
                     # (x, y) - (x, y + 1) を結ぶ枝
-                    node1 = node_array[x][y][z]
-                    node2 = node_array[x][y + 1][z]
+                    node1 = self._node_array[x][y][z]
+                    node2 = self._node_array[x][y + 1][z]
                     self._new_edge(node1, node2, False)
 
         # 端子の印をつける．
         self._terminal_node_pair_list = []
         for net_id, (label, s, e) in enumerate(problem.net_list()) :
-            node1 = node_array[s.x][s.y][s.z]
-            node2 = node_array[e.x][e.y][e.z]
+            node1 = self._node_array[s.x][s.y][s.z]
+            node2 = self._node_array[e.x][e.y][e.z]
             node1.set_terminal(net_id)
             node2.set_terminal(net_id)
             self._terminal_node_pair_list.append((node1, node2))
 
         # ビアの印をつける．
+        self._via_nodes_list = [[] for via_id in range(0, self._via_num)]
         for via_id, via in enumerate(problem.via_list()) :
+            via_nodes = []
             for z in range(via.z1, via.z2 - via.z1 + 1) :
-                node = node_array[via.x][via.y][z]
+                node = self._node_array[via.x][via.y][z]
                 node.set_via(via_id)
+                via_nodes.append(node)
+            self._via_nodes_list[via_id] = via_nodes
+
 
     ## @brief 問題の幅
     @property
@@ -319,6 +326,18 @@ class NlGraph :
     # @param[in] net_id 線分番号
     def terminal_node_pair(self, net_id) :
         return self._terminal_node_pair_list[net_id]
+
+
+    ## @brief ビアのノードリストを返す．
+    # @param[in] via_id ビア番号
+    def via_node_list(self, via_id) :
+        return self._via_nodes_list[via_id]
+
+
+    ## @brief 座標を指定して対応するノードを返す．
+    # @param[in] x, y, z 座標
+    def node(self, x, y, z) :
+        return self._node_array[x][y][z]
 
 
     ## @brief 枝を作る．

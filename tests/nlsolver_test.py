@@ -23,7 +23,7 @@ if __name__ == '__main__' :
 
     filename = sys.argv[1]
     with open(filename, 'rt') as fin :
-        problem = reader.read(fin)
+        problem = reader.read_problem(fin)
         if problem is None :
             print('{}: read failed.'.format(filename))
             exit(-1)
@@ -32,9 +32,7 @@ if __name__ == '__main__' :
 
         graph = nl3d.NlGraph(problem)
 
-        solver = nl3d.sat.SatSolver('minisat_static')
-
-        status, solution = nl3d.solve_nlink(graph, solver)
+        status, solution = nl3d.solve_nlink(graph)
 
         print(status)
 

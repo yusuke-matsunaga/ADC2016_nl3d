@@ -50,13 +50,20 @@ class SatSolver :
     # たとえば 3 なら 3番目の変数の肯定
     # -1 なら 1番目の変数の否定を表す．
     def add_clause(self, *args) :
-        if isinstance(args, int) :
-            # singleton の場合
-            lit = args
-            if self._check_lit(lit) :
-                self._clause_list.append([lit])
+        if len(args) == 1 :
+            arg0 = args[0]
+            if isinstance(arg0, int) :
+                # singleton の場合
+                lit = arg0
+                if self._check_lit(lit) :
+                    self._clause_list.append([lit])
+            elif isinstance(arg0, list) :
+                # リストの場合
+                for lit in arg0 :
+                    if not self._check_lit(lit) :
+                        return
+                self._clause_list.append(arg0)
         else :
-            # リストの場合
             for lit in args :
                 if not self._check_lit(lit) :
                     return
