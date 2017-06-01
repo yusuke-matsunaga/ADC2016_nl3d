@@ -40,7 +40,9 @@ def solve_nlink(graph, solver) :
         route_list = [enc.model_to_route(model, net_id) \
                       for net_id in range(0, graph.net_num)]
 
-        return "OK", NlSolution(graph, route_list)
+        solution = NlSolution()
+        solution.set_from_routes(graph, route_list)
+        return "OK", solution
 
     elif result == SatBool3.B3False :
         # 解けなかった．

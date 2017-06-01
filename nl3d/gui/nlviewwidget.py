@@ -106,6 +106,8 @@ class NlViewWidget(QWidget) :
 
         self._LshapeMode = 3
 
+        self._DrawLine = False
+
         self._Modified = False
 
         self.setMouseTracking(True)
@@ -233,12 +235,9 @@ class NlViewWidget(QWidget) :
         self.update()
 
 
-    ## @brief L字制約の表示モードを制御する．
-    # @param[in] mode モード
-    def set_lshape_mode(self, mode) :
-        self._LshapeMode = mode
-
-        self.update()
+    ## @brief 解の線分を描画するようにする．
+    def set_solution_mode(self) :
+        self._DrawLine = True
 
 
     ## @brief paint イベント
@@ -344,7 +343,8 @@ class NlViewWidget(QWidget) :
                                      Qt.AlignCenter, label)
         painter.restore()
 
-        # マークの描画
+        if not self._DrawLine :
+            return
 
         # 水平方向の結線の描画
         painter.save()

@@ -26,7 +26,7 @@ class NlViewMgr(QObject) :
 
     ## @brief クリアする．
     def clear(self) :
-        self.mViewList = []
+        self._ViewList = []
 
 
     ## @brief 問題を設定する．
@@ -37,23 +37,38 @@ class NlViewMgr(QObject) :
         height = problem.height
         depth = problem.depth
 
+        # 各層を表すウィジェットを生成する．
         for d in range(0, depth) :
             vw = NlViewWidget()
             vw.set_size(width, height)
-            self.mViewList.append(vw)
+            self._ViewList.append(vw)
             vw.show()
 
+        # 終端の設定を行う．
         for net_id, (label, s, e) in enumerate(problem.net_list()) :
             self._set_terminal(s, net_id)
             self._set_terminal(e, net_id)
 
+        # ビアの設定を行う．
         for via_id, via in enumerate(problem.via_list()) :
             self._set_via(via, via_id)
 
 
     ## @brief 問題と解を設定する．
     def set_solution(self, problem, solution) :
-        pass
+        self.set_problem(problem)
+
+        width = problem.width
+        height = problem.height
+        depth = problem.depth
+
+        for d in range(0, depth) :
+            vw = self._ViewList[d]
+            vw.set_solution_mode()
+            for x in range(0, width) :
+                for y in range(0, height) :
+                    val = solution.val(x, y, d)
+                    vw.set_val(x, y, val)
 
 
     ## @brief 終端の設定を行う．
@@ -61,7 +76,7 @@ class NlViewMgr(QObject) :
         x = point.x
         y = point.y
         z = point.z
-        vw = self.mViewList[z]
+        vw = self._ViewList[z]
         vw.set_terminal(x, y, label)
 
 
@@ -73,5 +88,5 @@ class NlViewMgr(QObject) :
         z1 = via.z1
         z2 = via.z2
         for z in range(z1, z2 + 1) :
-            vw = self.mViewList[z]
+            vw = self._ViewList[z]
             vw.set_via(via_id, x, y, label)
