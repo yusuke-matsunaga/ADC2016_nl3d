@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-## @file nlcnfencoderr.py
+## @file nlcnfencoder.py
 # @brief NlCnfEncoder の定義ファイル
 # @author Yusuke Matsunaga (松永 裕介)
 #

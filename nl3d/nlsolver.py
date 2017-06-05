@@ -15,10 +15,10 @@ from nl3d.sat.satbool3 import SatBool3
 
 ## @brief 問題を表すCNF式を生成する．
 # @param[in] graph 問題を表すグラフ(NlGraph)
-# @return <status>, <solution> のタプルを返す．
+# @return status, solution のタプルを返す．
 #
-# <status> は "OK", "NG", "Abort" のいずれか
-# <solution> は "OK" の時は NlSolution のオブジェクト
+# status は "OK", "NG", "Abort" のいずれか
+# solution は "OK" の時は NlSolution のオブジェクト
 # それ以外は None
 def solve_nlink(graph) :
 
