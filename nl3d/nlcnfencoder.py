@@ -264,7 +264,6 @@ class NlCnfEncoder :
         solution.set_size(self._graph.width, self._graph.height, self._graph.depth)
         for net_id in range(0, self._graph.net_num) :
             start, end = self._graph.terminal_node_pair(net_id)
-            print('net_id: {}, start = {}, end = {}'.format(net_id, start.str(), end.str()))
             prev = None
             node = start
             while node != end :
@@ -291,14 +290,6 @@ class NlCnfEncoder :
                 assert next != None
                 prev = node
                 node = next
-                var_list = self._node_vars_list[node.id]
-                pat = ""
-                for var in var_list :
-                    if model[var] == SatBool3.B3True :
-                        pat = '1' + pat
-                    else :
-                        pat = '0' + pat
-                print(' -> {} [{}]'.format(node.str(), pat))
             solution.set_val(node.x, node.y, node.z, net_id + 1)
 
         return solution
@@ -330,11 +321,11 @@ class NlCnfEncoder :
         elif node.is_via :
             # node がビアの場合
             # この層に終端を持つ線分と結びついている時はただ一つの枝が選ばれる．
-            vid = node.via_id
-            for net_id in range(0, self._graph.net_num) :
-                cvar = self._nv_map[net_id][vid]
+            via_id = node.via_id
+            for net_id in self._graph.via_net_list(via_id) :
+                cvar = self._nv_map[net_id][via_id]
                 node1, node2 = self._graph.terminal_node_pair(net_id)
-                if (node1.z == node2.z) or (node1.z != node.z and node2.z != node.z) :
+                if node1.z != node.z and node2.z != node.z :
                     # このビアは net_id の線分には使えない．
                     # このノードに接続する枝は選ばれない．
                     self._make_conditional_zero_hot(cvar, evar_list)
@@ -355,62 +346,20 @@ class NlCnfEncoder :
 
     ## @brief via_id に関してただ一つの線分が選ばれるという制約を作る．
     def _make_via_net_constraint(self, via_id) :
-        # このビアに関係のあるネットを調べる．
-        vnode_list =self._graph.via_node_list(via_id)
-        one_list = []
-        zero_list = []
-        for net_id in range(0, self._graph.net_num) :
-            start, end = self._graph.terminal_node_pair(net_id)
-            found = False
-            if start.z != end.z :
-                for node in vnode_list :
-                    if node.z == start.z or node.z == end.z :
-                        found = True
-                        break
-            if found :
-                one_list.append(net_id)
-            else :
-                zero_list.append(net_id)
+        # このビアに関係するネットを調べ，対応するビア割り当て変数のリストを作る．
+        vars_list = [self._nv_map[net_id][via_id] for net_id in self._graph.via_net_list(via_id)]
 
-        # one_list に含まれる線分番号がこのビアに関係するネット
-        vars_list = [self._nv_map[net_id][via_id] for net_id in one_list]
         # この変数に対する one-hot 制約を作る．
         self._make_one_hot(vars_list)
-        # zero_list の変数は 0 に固定する．
-        for net_id in zero_list :
-            var = self._nv_map[net_id][via_id]
-            self._solver.add_clause(-var)
 
 
     ## @brief net_id に関してただ一つのビアが選ばれるという制約を作る．
     def _make_net_via_constraint(self, net_id) :
-        # このネットに関係のあるビアを調べる．
-        start, end = self._graph.terminal_node_pair(net_id)
-        one_list = []
-        zero_list = []
-        if start.z == end.z :
-            zero_list = range(0, self._graph.via_num)
-        else :
-            for via_id in range(0, self._graph.via_num) :
-                vnode_list = self._graph.via_node_list(via_id)
-                found = False
-                for node in vnode_list :
-                    if node.z == start.z or node.z == end.z :
-                        found = True
-                        break
-                if found :
-                    one_list.append(via_id)
-                else :
-                    zero_list.append(via_id)
+        # このネットに関係のあるビアを調べ，対応するビア割り当て変数のリストを作る．
+        vars_list = [self._nv_map[net_id][via_id] for via_id in self._graph.net_via_list(net_id)]
 
-        # one_list に含まれるビア番号がこのネットに関係するビア
-        vars_list = [self._nv_map[net_id][via_id] for via_id in one_list]
         # この変数に対する one-hot 制約を作る．
         self._make_one_hot(vars_list)
-        # zero_list の変数は 0 に固定する．
-        for via_id in zero_list :
-            var = self._nv_map[net_id][via_id]
-            self._solver.add_clause(-var)
 
 
     ## @brief 枝の両端のノードのラベルに関する制約を作る．
@@ -433,15 +382,11 @@ class NlCnfEncoder :
     # @param[in] net_id 固定する線分番号
     def _make_label_constraint(self, node, net_id) :
         lvar_list = self._node_vars_list[node.id]
-        pat = ''
         for i, lvar in enumerate(lvar_list) :
             if (1 << i) & (net_id + 1) :
                 self._solver.add_clause(lvar)
-                pat = '1' + pat
             else :
                 self._solver.add_clause(-lvar)
-                pat = '0' + pat
-        print('make_label_constraint({}:{}[{}])'.format(node.str(), net_id, pat))
 
 
     ## @brief 条件付きでラベル値を固定する制約を作る．
@@ -450,15 +395,11 @@ class NlCnfEncoder :
     # @param[in] net_id 固定する線分番号
     def _make_conditional_label_constraint(self, cvar, node, net_id) :
         lvar_list = self._node_vars_list[node.id]
-        pat = ''
         for i, lvar in enumerate(lvar_list) :
             if (1 << i) & (net_id + 1) :
                 self._solver.add_clause(-cvar, lvar)
-                pat = '1' + pat
             else :
                 self._solver.add_clause(-cvar, -lvar)
-                pat = '0' + pat
-        print('make_conditional_label_constraint({} -> {}:{}[{}])'.format(cvar, node.str(), net_id, pat))
 
 
     ## @brief 枝に対する変数番号を返す．

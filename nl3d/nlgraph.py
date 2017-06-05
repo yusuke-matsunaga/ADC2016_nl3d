@@ -222,9 +222,14 @@ class NlEdge :
 class NlGraph :
 
     ## @brief 初期化
-    #
     # @param[in] problem 問題を表すオブジェクト(NlProblem)
     def __init__(self, problem) :
+        self.set_problem(problem)
+
+
+    ## @brief 問題を設定する．
+    # @param[in] problem 問題を表すオブジェクト(NlProblem)
+    def set_problem(self, problem) :
         self._width = problem.width
         self._height = problem.height
         self._depth = problem.depth
@@ -279,6 +284,23 @@ class NlGraph :
                 via_nodes.append(node)
             self._via_nodes_list[via_id] = via_nodes
 
+        # ビアを使うことのできるネットを求める．
+        # 条件はネットの２つの終端の層番号をそのビアが含んでいること．
+        # ただし2つの終端の層番号が等しいネットは除外する．
+        # _via_net_list[via_id] に via_id と関係のある線分番号のリストが入る．
+        # _net_via_list[net_id] に net_id と関係のあるビア番号のリストが入る．
+        self._via_net_list = [[] for via_id in range(0, self._via_num)]
+        self._net_via_list = [[] for net_id in range(0, self._net_num)]
+        for via_id, via in enumerate(problem.via_list()) :
+            z1 = via.z1
+            z2 = via.z2
+            net_list = []
+            for net_id, (label, s, e) in enumerate(problem.net_list()) :
+                if s.z != e.z and z1 <= s.z <= z2 and z1 <= e.z <= z2 :
+                    net_list.append(net_id)
+                    self._net_via_list[net_id].append(via_id)
+            self._via_net_list[via_id] = net_list
+
 
     ## @brief 問題の幅
     @property
@@ -328,10 +350,22 @@ class NlGraph :
         return self._terminal_node_pair_list[net_id]
 
 
+    ## @brief ネットに関係するビア番号のリストを返す．
+    # @param[in] net_id 線分番号
+    def net_via_list(self, net_id) :
+        return self._net_via_list[net_id]
+
+
     ## @brief ビアのノードリストを返す．
     # @param[in] via_id ビア番号
     def via_node_list(self, via_id) :
         return self._via_nodes_list[via_id]
+
+
+    ## @brief ビアに関係する線分番号のリストを返す．
+    # @param[in] via_id ビア番号
+    def via_net_list(self, via_id) :
+        return self._via_net_list[via_id]
 
 
     ## @brief 座標を指定して対応するノードを返す．
